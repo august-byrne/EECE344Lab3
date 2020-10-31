@@ -8,7 +8,9 @@
  */
 
 #include "MCUType.h"               /* Include header files                    */
-#include "BasicIO.h"
+#include "MemTest.h"
+
+INT16U CalcChkSum(INT8U *startaddr, INT8U *endaddr);
 
 INT16U CalcChkSum(INT8U *startaddr, INT8U *endaddr){
 
