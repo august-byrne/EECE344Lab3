@@ -11,7 +11,9 @@
 #include "BasicIO.h"
 #include "K65TWR_ClkCfg.h"
 
-#define STRGLEN 9
+#define STRGLEN 2
+typedef enum {SW_CNT, HW_CNT, CO_CNT} COUNT_STATES;
+COUNT_STATES CountingState;
 
 void main(void){
 
@@ -20,69 +22,79 @@ void main(void){
     INT8C char_in;					//Received character
     INT8U in_err;					//Input error
     INT8U is_valid;					//must be 1 in order to move onto the next step in the program
-    INT32U low_addr;				//Received low address
-    INT32U high_addr;				//Received high address
+    INT32U low_addr = 0x00000000;				//Received low address
+    INT32U high_addr = 0x001FFFFF;				//Received high address
 
     K65TWR_BootClock();             /* Initialize MCU clocks                  */
     BIOOpen(BIO_BIT_RATE_115200);   /* Initialize Serial Port                 */
 
-    BIOPutStrg("Program has started running\n\r");		//Program startup message
+    BIOPutStrg("Program has started running\n\r");		//Program startup temp message
+
+	BIOPutStrg("CS: ");				//program start initial checksum
+	BIOOutHexWord(low_addr);
+	BIOPutStrg("-");
+	BIOOutHexWord(high_addr);
+	BIOPutStrg("  ");
+	INT16U math_val = CalcChkSum((INT8U *)low_addr,(INT8U *)high_addr);
+	BIOOutHexHWord(math_val);
+	BIOPutStrg("\n\r");
+
     while(1){
-        BIOPutStrg("Hash checking program\n\r");	//Program start of loop message
+        BIOPutStrg("Program entered loop\n\r");	//Program start of loop temp message
         is_valid = 0;
     	while (is_valid == 0){
-    		BIOPutStrg("\n\rEnter the Low Address (32-bit hex address): ");	//prompt message
-    		in_err = BIOGetStrg(STRGLEN,in_strg);		//receiving the low_address
+    		BIOPutStrg("\n\rEnter the type of counter you want to implement\n\rEnter s for software counter, h for hardware counter, and c for combination counter: ");	//prompt message
+    		in_err = BIOGetStrg(STRGLEN,in_strg);		//receiving the counter type
     		if(in_err == 0){
-    			in_err = BIOHexStrgtoWord(in_strg, &hex_word);       /*Convert string to hex word */
-    			if(in_err == 0){
-    				low_addr = hex_word;
+    			switch(in_strg){
+    			case 's':
     				is_valid = 1;
-    			}else{
-    				BIOPutStrg("\n\rLow Address is incorrect (null or has non-hex characters). Try Again\n\r");	//prompt message
+    				CountingState = SW_CNT;
+    				break;
+    			case 'h':
+    				is_valid = 1;
+    				CountingState = HW_CNT;
+    				break;
+    			case 'c':
+    				is_valid = 1;
+    				CountingState = SW_CNT;
+    				break;
     			}
+    			default:
+    				BIOPutStrg("\n\rThat input is not an option. Try Again\n\r");	//prompt message
     		}else{
-    			BIOPutStrg("\n\rLow Address exceeded allowed length. Try Again\n\r");	//prompt message
+    			BIOPutStrg("\n\rThat input is not an option. Try Again\n\r");	//prompt message
     		}
     	}
 
-    	is_valid = 0;
-    	while (is_valid == 0){
-    		BIOPutStrg("\n\rEnter the High Address (32-bit hex address): ");	//prompt message
-    		in_err = BIOGetStrg(STRGLEN,in_strg);		//receiving the high_address
-    		if(in_err == 0){
-				in_err = BIOHexStrgtoWord(in_strg, &hex_word);       /*Convert string to hex word */
-				if(in_err == 0){
-					high_addr = hex_word;
-					is_valid = 1;
-				}else{
-    				BIOPutStrg("\n\rHigh Address is incorrect (null or has non-hex characters). Try Again\n\r");	//prompt message
-    			}
-    		}else{
-    		    BIOPutStrg("\n\rHigh Address exceeded allowed length. Try Again\n\r");	//prompt message
-    		}
-    	}
+    	char_in = 'a';
+        switch(CountingState){
+        case SW_CNT:
 
-    	if (low_addr <= high_addr){
-    		BIOPutStrg("\n\rCS: ");	//prompt message
-    		BIOOutHexWord(low_addr);
-    		BIOPutStrg("-");
-    		BIOOutHexWord(high_addr);
-    		BIOPutStrg("  ");
-    		INT16U math_val = CalcChkSum((INT8U *)low_addr,(INT8U *)high_addr);
-    		BIOOutHexHWord(math_val);
+        	while('q' != char_in){
+        		char_in = BIOGetChar();
 
-			BIOPutStrg("\n\rPress Enter to check a new hash\n\r");	//prompt message
-			is_valid = 0;
-			while (is_valid == 0){
-				char_in = BIOGetChar();		//receiving a character
-				if(char_in == '\r'){
-					is_valid = 1;
-				}
-			}
-    	}else{
-    		BIOPutStrg("Your Low Address points to a higher memory address than your High Address\n\rPlease try again\n\r");	//prompt message
-    	}
+
+        	}
+
+        case HW_CNT:
+
+        	while('q' != char_in){
+        		char_in = BIOGetChar();
+
+
+        	}
+
+        case CO_CNT:
+
+        	while('q' != char_in){
+        		char_in = BIOGetChar();
+
+
+        	}
+
+        }
+
 
     }
 }
