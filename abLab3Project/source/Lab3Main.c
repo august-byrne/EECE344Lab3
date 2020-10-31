@@ -1,9 +1,10 @@
 /*******************************************************************************
 * EECE344 Lab 3 Code
-*	This program takes a high and a low address as inputs
-*	and calculates the hash/checksum of the data between the
-*	two addresses. It has error checking for the addresses, and
-*	will hold after calculating the hash until the user presses enter.
+*	This program .....
+*
+*
+*
+*
 * August Byrne, 10/30/2020
 *******************************************************************************/
 #include "MCUType.h"               /* Include header files                    */
@@ -14,12 +15,17 @@
 #include "K65TWR_GPIO.c"
 
 #define STRGLEN 2
+
+void PORTA_IRQHandler(void);
+
 typedef enum {SW_CNT, HW_CNT, CO_CNT} COUNT_STATES;
 COUNT_STATES CountingState;
 
+INT8U PulseCnt;
+int CountChanged;
+
 void main(void){
 
-	INT8U counter;
 	INT8C in_strg[STRGLEN];			//a character array representing a string
 	INT32U hex_word;				//a hexadecimal word
     INT8C char_in;					//Received character
@@ -46,8 +52,8 @@ void main(void){
         BIOPutStrg("Program start of loop\n\r");	//Program start of loop temp message
         is_valid = 0;
     	while (is_valid == 0){
-    		BIOPutStrg("\n\rEnter the type of counter you want to implement\n\rEnter s for software counter, h for hardware counter, and c for combination counter: ");	//prompt message
-    		in_err = BIOGetStrg(STRGLEN,in_strg);		//receiving the counter type
+    		BIOPutStrg("\n\rEnter the type of PulseCnt you want to implement\n\rEnter s for software PulseCnt, h for hardware PulseCnt, and c for combination PulseCnt: ");	//prompt message
+    		in_err = BIOGetStrg(STRGLEN,in_strg);		//receiving the PulseCnt type
     		if(in_err == 0){
     			switch(in_strg){
     			case 's':
@@ -73,16 +79,16 @@ void main(void){
     	char_in = 'a';
         switch(CountingState){
         case SW_CNT:
-        	counter = 0;
 
-        	'\r';
+        	PulseCnt = 0;
+    		GpioSw2Init(PORT_IRQ_FE); // init SW2 to detect a falling edge
+    		SW2_CLR_ISF(); // clear interrupt flag
 
         	while('q' != char_in){
         		char_in = BIOGetChar();
 
         		//poll for button state
-        		GpioSw2Init(PORT_IRQ_FE); // init SW2 to detect a falling edge
-        		SW2_CLR_ISF(); // clear interrupt flag
+
 
         		//if button pressed{
         			//if the button flag set to yes{ do nothing}
@@ -91,7 +97,7 @@ void main(void){
 
         				//BIOPut
         		BIOPutStrg('\r\r\r');
-        		BIODecWord(counter,3,BIO_OD_MODE_LZ);
+        		BIODecWord(PulseCnt,3,BIO_OD_MODE_LZ);
         				//set button pressed flag to yes
         		//}else{ set button flag to no}
 
@@ -100,24 +106,34 @@ void main(void){
         	}
         	break;
         case HW_CNT:
-        	counter = 0;
-
+        	PulseCnt = 0;
+        	CountChanged = 0;
+        	NVIC_ClearPendingIRQ(PORTA_IRQn);
+        	NVIC_EnableIRQ(PORTA_IRQn);
+    		GpioSw2Init(PORT_IRQ_FE); // init SW2 to detect a falling edge
+    		SW2_CLR_ISF(); // clear interrupt flag
         	while('q' != char_in){
         		char_in = BIOGetChar();
-
-
+        		if(CountChanged == 1){
+        			CountChanged = 0;
+            		BIOPutStrg('\r\r\r');
+            		BIODecWord(PulseCnt,3,BIO_OD_MODE_LZ);
+        		}
         	}
+        	GpioSw2Init(PORT_IRQ_OFF);
         	break;
         case CO_CNT:
-        	counter = 0;
-
-
-
-
+        	PulseCnt = 0;
+    		GpioSw2Init(PORT_IRQ_FE); // init SW2 to detect a falling edge
+    		SW2_CLR_ISF(); // clear interrupt flag
         	while('q' != char_in){
         		char_in = BIOGetChar();
-
-
+        		if(SW2_ISF != 0){ //check flag
+        			SW2_CLR_ISF(); // Clear flag
+        			PulseCnt++;
+            		BIOPutStrg('\r\r\r');
+            		BIODecWord(PulseCnt,3,BIO_OD_MODE_LZ);
+        		}
         	}
         	break;
         default:
@@ -127,3 +143,19 @@ void main(void){
     }
 
 }
+
+
+void PORTA_IRQHandler(void){
+if(SW2_ISF != 0x00){
+SW2_CLR_ISF();
+PulseCnt++;
+CountChanged = 1;
+}else{
+//some other PORTA bit was set
+}
+}
+
+
+
+
+
