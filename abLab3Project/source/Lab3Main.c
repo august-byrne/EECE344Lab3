@@ -22,7 +22,6 @@ typedef enum {SW_CNT, HW_CNT, CO_CNT} COUNT_STATES;
 COUNT_STATES CountingState;
 
 INT8U PulseCnt;
-int CountChanged;
 
 void main(void){
 
@@ -75,47 +74,36 @@ void main(void){
     			BIOPutStrg("\n\rThat input is not an option. Try Again\n\r");	//prompt message
     		}
     	}
-
-    	char_in = 'a';
+    	char_in = 'a';						//an unused value to initialize with
         switch(CountingState){
         case SW_CNT:
-
         	PulseCnt = 0;
-    		GpioSw2Init(PORT_IRQ_FE); // init SW2 to detect a falling edge
-    		SW2_CLR_ISF(); // clear interrupt flag
-
+        	GpioSw2Init(PORT_IRQ_OFF);
+    		last_in &= ~GPIO_PIN(SW2_BIT); //preset to zero so a 1 is required to start
         	while('q' != char_in){
         		char_in = BIOGetChar();
-
         		//poll for button state
-
-
-        		//if button pressed{
-        			//if the button flag set to yes{ do nothing}
-        			//else {
-        				//add one to count
-
-        				//BIOPut
+        		cur_sig = SW2_INPUT;
+        		if((cur_sig == GPIO_PIN(SW2_BIT)) && (last_in == 0x00)) { //rising-edge
+        		PulseCnt++;
         		BIOPutStrg('\r\r\r');
         		BIODecWord(PulseCnt,3,BIO_OD_MODE_LZ);
-        				//set button pressed flag to yes
-        		//}else{ set button flag to no}
-
-
-
+        		}else{ // no falling edge
+        		}
+        		last_in = cur_sig;
         	}
         	break;
         case HW_CNT:
         	PulseCnt = 0;
-        	CountChanged = 0;
+        	INT8U CountOld = 0;
         	NVIC_ClearPendingIRQ(PORTA_IRQn);
         	NVIC_EnableIRQ(PORTA_IRQn);
-    		GpioSw2Init(PORT_IRQ_FE); // init SW2 to detect a falling edge
+    		GpioSw2Init(PORT_IRQ_RE); // init SW2 to detect a rising edge
     		SW2_CLR_ISF(); // clear interrupt flag
         	while('q' != char_in){
         		char_in = BIOGetChar();
-        		if(CountChanged == 1){
-        			CountChanged = 0;
+        		if(CountOld != PulseCnt){
+        			CountOld = PulseCnt;
             		BIOPutStrg('\r\r\r');
             		BIODecWord(PulseCnt,3,BIO_OD_MODE_LZ);
         		}
@@ -124,7 +112,7 @@ void main(void){
         	break;
         case CO_CNT:
         	PulseCnt = 0;
-    		GpioSw2Init(PORT_IRQ_FE); // init SW2 to detect a falling edge
+    		GpioSw2Init(PORT_IRQ_RE); // init SW2 to detect a rising edge
     		SW2_CLR_ISF(); // clear interrupt flag
         	while('q' != char_in){
         		char_in = BIOGetChar();
@@ -135,27 +123,20 @@ void main(void){
             		BIODecWord(PulseCnt,3,BIO_OD_MODE_LZ);
         		}
         	}
+        	GpioSw2Init(PORT_IRQ_OFF);
         	break;
         default:
         	BIOPutStrg("\n\This input broke the program!\n\r");	//prompt message
         }
-
     }
-
 }
-
 
 void PORTA_IRQHandler(void){
 if(SW2_ISF != 0x00){
 SW2_CLR_ISF();
 PulseCnt++;
-CountChanged = 1;
 }else{
 //some other PORTA bit was set
 }
 }
-
-
-
-
 
