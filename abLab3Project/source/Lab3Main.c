@@ -1,15 +1,17 @@
 /*******************************************************************************
-* EECE344 Lab 2 Code
+* EECE344 Lab 3 Code
 *	This program takes a high and a low address as inputs
 *	and calculates the hash/checksum of the data between the
 *	two addresses. It has error checking for the addresses, and
 *	will hold after calculating the hash until the user presses enter.
-* August Byrne, 10/19/2020
+* August Byrne, 10/30/2020
 *******************************************************************************/
 #include "MCUType.h"               /* Include header files                    */
 #include "MemTest.h"
 #include "BasicIO.h"
 #include "K65TWR_ClkCfg.h"
+#include "MK65F18.h"
+#include "K65TWR_GPIO.c"
 
 #define STRGLEN 2
 typedef enum {SW_CNT, HW_CNT, CO_CNT} COUNT_STATES;
@@ -17,6 +19,7 @@ COUNT_STATES CountingState;
 
 void main(void){
 
+	INT8U counter;
 	INT8C in_strg[STRGLEN];			//a character array representing a string
 	INT32U hex_word;				//a hexadecimal word
     INT8C char_in;					//Received character
@@ -40,7 +43,7 @@ void main(void){
 	BIOPutStrg("\n\r");
 
     while(1){
-        BIOPutStrg("Program entered loop\n\r");	//Program start of loop temp message
+        BIOPutStrg("Program start of loop\n\r");	//Program start of loop temp message
         is_valid = 0;
     	while (is_valid == 0){
     		BIOPutStrg("\n\rEnter the type of counter you want to implement\n\rEnter s for software counter, h for hardware counter, and c for combination counter: ");	//prompt message
@@ -70,31 +73,57 @@ void main(void){
     	char_in = 'a';
         switch(CountingState){
         case SW_CNT:
+        	counter = 0;
+
+        	'\r';
 
         	while('q' != char_in){
         		char_in = BIOGetChar();
 
+        		//poll for button state
+        		GpioSw2Init(PORT_IRQ_FE); // init SW2 to detect a falling edge
+        		SW2_CLR_ISF(); // clear interrupt flag
+
+        		//if button pressed{
+        			//if the button flag set to yes{ do nothing}
+        			//else {
+        				//add one to count
+
+        				//BIOPut
+        		BIOPutStrg('\r\r\r');
+        		BIODecWord(counter,3,BIO_OD_MODE_LZ);
+        				//set button pressed flag to yes
+        		//}else{ set button flag to no}
+
+
 
         	}
-
+        	break;
         case HW_CNT:
+        	counter = 0;
 
         	while('q' != char_in){
         		char_in = BIOGetChar();
 
 
         	}
-
+        	break;
         case CO_CNT:
+        	counter = 0;
+
+
+
 
         	while('q' != char_in){
         		char_in = BIOGetChar();
 
 
         	}
-
+        	break;
+        default:
+        	BIOPutStrg("\n\This input broke the program!\n\r");	//prompt message
         }
 
-
     }
+
 }
