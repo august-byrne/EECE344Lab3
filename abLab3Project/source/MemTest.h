@@ -8,6 +8,14 @@
 #ifndef MEMTEST_H_
 #define MEMTEST_H_
 
+/********************************************************************
+* BIOGetStrg() - Calculates the checksum between two addresses.
+*
+* Return value: The calculated checksum from start to end address
+*
+* Arguments: *startaddr is a pointer to the starting address
+*            *endaddr is a pointer to the starting address
+********************************************************************/
 INT16U CalcChkSum(INT8U *startaddr, INT8U *endaddr);
 
 #endif /* MEMTEST_H_ */
