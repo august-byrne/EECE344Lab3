@@ -85,12 +85,12 @@ void main(void){
     			//poll for button state
     			cur_sig = SW2_INPUT;
     			if((cur_sig == 0x00) && (last_in == GPIO_PIN(SW2_BIT))) { //falling-edge
-    			PulseCnt++;
-    			if (PulseCnt > 999){
-    				PulseCnt = 0;
-    			}else{}
-    			BIOPutStrg("\r\r\r");
-    			BIOOutDecWord(PulseCnt,3,BIO_OD_MODE_LZ);
+    				PulseCnt++;
+    				if(PulseCnt > 999){
+    					PulseCnt = 0;
+    				}else{}
+    				BIOPutStrg("\r\r\r");
+    				BIOOutDecWord(PulseCnt,3,BIO_OD_MODE_LZ);
     			}else{}
     			last_in = cur_sig;
     		}
@@ -106,7 +106,7 @@ void main(void){
     		while('q' != char_in){
     			char_in = BIORead();
     			if(old_count != PulseCnt){
-    				if (PulseCnt > 999){
+    				if(PulseCnt > 999){
     					PulseCnt = 0;
     				}else{}
     				old_count = PulseCnt;
@@ -126,7 +126,7 @@ void main(void){
     			if(SW2_ISF != 0){ //check flag
     				SW2_CLR_ISF(); // Clear flag
     				PulseCnt++;
-    				if (PulseCnt > 999){
+    				if(PulseCnt > 999){
     					PulseCnt = 0;
     				}else{}
     				BIOPutStrg("\r\r\r");
