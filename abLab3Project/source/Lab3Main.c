@@ -4,7 +4,7 @@
 *	and use them with SW2 (switch 2 on our board). The user can also quit out
 *	of any of the types with q, and try a different one.
 * August Byrne, 10/30/2020
-* Last edited on: 11/29/20
+* Last edited on: 12/10/20
 *******************************************************************************/
 #include "MCUType.h"               /* Include header files                    */
 #include "MemTest.h"
@@ -13,14 +13,14 @@
 #include "K65TWR_GPIO.h"
 
 #define STRGLEN 2
-#define LOWADDR (INT32U *) 0x00000000			//low memory address
-#define HIGHADRR (INT32U *) 0x001FFFFF		//high memory address
+#define LOWADDR (INT32U) 0x00000000			//low memory address
+#define HIGHADRR (INT32U) 0x001FFFFF		//high memory address
 
 void PORTA_IRQHandler(void);
 
 typedef enum {SW_CNT, HW_CNT, CO_CNT} COUNT_STATES;
 
-INT16U PulseCnt;
+static INT16U PulseCnt;
 
 void main(void){
     INT8C in_strg[STRGLEN];			//a character array representing a string
@@ -49,7 +49,8 @@ void main(void){
     while(1){
     	is_valid = 0;
     	while (is_valid == 0){
-    		BIOPutStrg("\n\rEnter the type of PulseCnt you want to implement\n\r(Enter s, h , or c for software, hardware, or combination counters respectively)\n\r");	//prompt message
+    		BIOPutStrg("\n\rEnter the type of PulseCnt you want to implement\n\r"
+    				"(Enter s, h , or c for software, hardware, or combination counters respectively)\n\r");	//prompt message
     		in_err = BIOGetStrg(STRGLEN,in_strg);		//receiving the PulseCnt type
     		if(in_err == 0){
     			switch(in_strg[0]){
@@ -66,25 +67,25 @@ void main(void){
     				CountingState = SW_CNT;
     				break;
     			default:
-    				BIOPutStrg("\n\rThat input is not an option. Try Again\n\r");	//prompt message
+    				BIOPutStrg("\n\rThat input is not an option. Try Again\n\r");	//error message to user
     			}
     		}else{
-    			BIOPutStrg("\n\rThat input is not an option; to many characters. Try Again\n\r");	//prompt message
+    			BIOPutStrg("\n\rThat input is not an option; too many characters. Try Again\n\r");	//error message to user
     		}
     	}
-    	char_in = 'a';				//an unused value to initialize with
-    	PulseCnt = 0;				//initialize the counter at 0 regardless of the type of counter we use
+    	char_in = 'a';			//an unused value to initialize with
+    	PulseCnt = 0;			//initialize the counter at 0 regardless of the type of counter we use
     	switch(CountingState){
     	case SW_CNT:
     		GpioSw2Init(PORT_IRQ_OFF);
-    		last_in &= ~GPIO_PIN(SW2_BIT); //preset to zero so a 1 is required to start
+    		last_in &= ~GPIO_PIN(SW2_BIT);	//preset to zero so that a one is required to start
     		BIOPutStrg("\r\r\r");
     		BIOOutDecWord(PulseCnt,3,BIO_OD_MODE_LZ);
     		while('q' != char_in){
     			char_in = BIORead();
     			//poll for button state
     			cur_sig = SW2_INPUT;
-    			if((cur_sig == 0x00) && (last_in == GPIO_PIN(SW2_BIT))) { //falling-edge
+    			if((cur_sig == 0x00) && (last_in == GPIO_PIN(SW2_BIT))) {	//falling-edge
     				PulseCnt++;
     				if(PulseCnt > 999){
     					PulseCnt = 0;
@@ -99,8 +100,8 @@ void main(void){
     		old_count = 0;
     		NVIC_ClearPendingIRQ(PORTA_IRQn);
     		NVIC_EnableIRQ(PORTA_IRQn);
-    		GpioSw2Init(PORT_IRQ_FE); //initialize SW2 to detect a falling edge
-    		SW2_CLR_ISF(); // clear interrupt flag
+    		GpioSw2Init(PORT_IRQ_FE);	//initialize SW2 to detect a falling edge
+    		SW2_CLR_ISF();	//clear interrupt flag
     		BIOPutStrg("\r\r\r");
     		BIOOutDecWord(PulseCnt,3,BIO_OD_MODE_LZ);
     		while('q' != char_in){
@@ -117,14 +118,14 @@ void main(void){
     		GpioSw2Init(PORT_IRQ_OFF);
     		break;
     	case CO_CNT:
-    		GpioSw2Init(PORT_IRQ_FE); //initialize SW2 to detect a falling edge
-    		SW2_CLR_ISF(); // clear interrupt flag
+    		GpioSw2Init(PORT_IRQ_FE);	//initialize SW2 to detect a falling edge
+    		SW2_CLR_ISF();	//clear interrupt flag
     		BIOPutStrg("\r\r\r");
     		BIOOutDecWord(PulseCnt,3,BIO_OD_MODE_LZ);
     		while('q' != char_in){
     			char_in = BIORead();
-    			if(SW2_ISF != 0){ //check flag
-    				SW2_CLR_ISF(); // Clear flag
+    			if(SW2_ISF != 0){	//check flag
+    				SW2_CLR_ISF();	//clear flag
     				PulseCnt++;
     				if(PulseCnt > 999){
     					PulseCnt = 0;
@@ -136,7 +137,7 @@ void main(void){
     		GpioSw2Init(PORT_IRQ_OFF);
     		break;
     	default:
-    		BIOPutStrg("\nThis input broke the program!\n\r");	//prompt message
+    		BIOPutStrg("\nThis input broke the program!\n\r");	//error message to user
     	}
     }
 }
